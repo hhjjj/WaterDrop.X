@@ -50,7 +50,7 @@ void main(void) {
     DACCON0bits.DACEN=0;    // turn DAC off
 
     INTCON = 0b10000000;	// global ints enabled, all sources masked
-    OPTION_REG = 0b10000001;	//no weak pull-ups, timer0 at OSC/4/2 = osc/ 8
+    OPTION_REG = 0b10000011;	//no weak pull-ups, timer0 at OSC/4/2 = osc/ 8
 
     // PORT A Assignments
     TRISAbits.TRISA0 = 0;	// RA0 = nc
@@ -112,43 +112,21 @@ void main(void) {
     while(1)
     {
 
-        
-//    LATAbits.LATA0 = 1;
-//
-//    // __delay_ms give "Unable to resolve identifier"
-//    // but it compiled and works
-//    //__delay_ms(1000);
-//    for ( i = 0 ; i < 500 ; i++)
-//    {
-//        NOP();
-//    }
-//
-//
-//     LATAbits.LATA0 = 0;
-//     // __delay_ms give "Unable to resolve identifier"
-//    // but it compiled and works
-//      //__delay_ms(1000);
-//for ( i = 0 ; i < 500 ; i++)
-//    {
-//        NOP();
-//    }
-
-
-
     }
 }
 
 void interrupt isr(void)
 {
-    TMR0 = 0; // sound update rate around 22.05kHz
+    TMR0 = 30; // sound sampling rate around 2.2kHz
     RA4 = ~RA4;
     SetPWMDutyCyle(SineTable[step]);
+
     step++;
 
     if (step > 640)
     {
         SetPWMDutyCyle(0);
-        //INTCONbits.TMR0IE = 0;
+        INTCONbits.TMR0IE = 0;
         step = 0;
     }
 
