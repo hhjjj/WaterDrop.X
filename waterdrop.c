@@ -20,7 +20,8 @@ const char SineTable[640] = {128, 128, 129, 129, 131, 131, 129, 129, 128, 128, 1
 
 
 
-#pragma config CPD = OFF, BOREN = OFF, IESO = OFF, FOSC = INTOSC, FCMEN = OFF, MCLRE = OFF, WDTE = OFF, CP = OFF, PWRTE = OFF, CLKOUTEN = OFF
+#pragma config CPD = OFF, BOREN = OFF, IESO = OFF, FOSC = INTOSC, FCMEN = OFF, MCLRE = ON, WDTE = OFF, CP = OFF, PWRTE = OFF, CLKOUTEN = OFF, LVP = OFF
+
 // when CLKOUTEN = ON,  Fosc / 4 frequency can be measured via RA4 pin
 
 // just for __delay_ms() as reference
@@ -49,7 +50,7 @@ void main(void) {
     ADCON0bits.ADON=0;      // turn ADC off
     DACCON0bits.DACEN=0;    // turn DAC off
 
-    INTCON = 0b10000000;	// global ints enabled, all sources masked
+    INTCON = 0b11000000;	// global ints enabled peripheral interrupts enabled , all sources masked
     OPTION_REG = 0b10000011;	//no weak pull-ups, timer0 at OSC/4/2 = osc/ 8
 
     // PORT A Assignments
@@ -86,28 +87,31 @@ void main(void) {
     CCP1CONbits.CCP1M=0x0C;     // select PWM mode for CCP module
     CCP1CONbits.P1M=0x00;	// select single output on CCP1 pin (RA5)
 
-    //PR2 = 0xff;                 // set PWM period as 255 per our example above
+    PR2 = 124;                 // set PWM period as 255 per our example above ( 4 kHz )
     // NOTE: PWM resolution is a function of PR2
-    PR2 = 0x3F;                 // set PWM period as 0x3F (125kHz), then PWM resoution is 8 bit
+    //PR2 = 0x3F;                 // set PWM period as 0x3F (125kHz), then PWM resoution is 8 bit
 
     CCPR1L =  0x00;             // clear high 8 bits of PWM duty cycle
     CCP1CONbits.DC1B=0x00;	// clear low 2 bits of PWM Duty cycle
 
                                 // Note: PWM uses TMR2 so we need to configure it
     PIR1bits.TMR2IF=0;		// clear TMR2 interrupt flag
-    T2CONbits.T2CKPS=0b00;      // select TMR2 prescalar as divide by 1 as per our example above
+    //T2CONbits.T2CKPS=0b00;      // select TMR2 prescalar as divide by 1 as per our example above
+    T2CONbits.T2CKPS=0b10;      // select TMR2 prescalar as divide by 1 as per our example above
     T2CONbits.TMR2ON=1;		// turn TMR2 on
+    
+    PIE1bits.TMR2IE = 1; //turn TMR2 int on
 
     TRISAbits.TRISA2 = 0;	// turn PWM output back on
 
 
-    TMR0 = 0;
-    INTCONbits.TMR0IF = 0;
-    INTCONbits.TMR0IE = 1;
-
+//    TMR0 = 0;
+//    INTCONbits.TMR0IF = 0;
+//    INTCONbits.TMR0IE = 1;
+    
     step = 0;
     RA4 = 0;
-    SetPWMDutyCyle(0);
+    SetPWMDutyCyle(255); // 50% duty ratio
     //volatile unsigned int i  = 0 ;
     while(1)
     {
@@ -117,19 +121,25 @@ void main(void) {
 
 void interrupt isr(void)
 {
-    TMR0 = 30; // sound sampling rate around 2.2kHz
-    RA4 = ~RA4;
-    SetPWMDutyCyle(SineTable[step]);
-
-    step++;
-
-    if (step > 640)
+    if ( TMR2IF == 1)
     {
-        SetPWMDutyCyle(0);
-        INTCONbits.TMR0IE = 0;
-        step = 0;
+        // half the frequency of PWM = 2 kHz
+        RA4 = ~RA4;
+        PIR1bits.TMR2IF = 0;
     }
-
-    INTCONbits.TMR0IF = 0;
+//    TMR0 = 30; // sound sampling rate around 2.2kHz
+//    RA4 = ~RA4; // 1.1 kHz toggling
+//    SetPWMDutyCyle(SineTable[step]);
+//
+//    step++;
+//
+//    if (step > 640)
+//    {
+//        SetPWMDutyCyle(0);
+//        //INTCONbits.TMR0IE = 0;
+//        step = 0;
+//    }
+//
+//    INTCONbits.TMR0IF = 0;
 
 }
