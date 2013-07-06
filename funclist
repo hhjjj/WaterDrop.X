@@ -1,7 +1,9 @@
 __stringtab: STRCODE, 256 0 1
-_main: CODE, 897 0 62
-__initialization: CODE, 981 0 2
-_SetPWMDutyCyle: CODE, 959 0 22
-_isr: CODE, 4 0 15
+_main: CODE, 897 0 86
+__initialization: CODE, 1141 0 21
+___lwdiv: CODE, 983 0 70
+_SetPWMDutyCyle: CODE, 1114 0 27
+_isr: CODE, 4 0 91
+___lwmod: CODE, 1053 0 61
 _SineTable: STRCODE, 0 0 897
-Total: 999
+Total: 1254

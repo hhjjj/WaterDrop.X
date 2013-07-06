@@ -15,9 +15,16 @@ const char SineTable[640] = {128, 128, 129, 129, 131, 131, 129, 129, 128, 128, 1
 };
 
 
+// pwm period 4 kHz
+
+volatile unsigned int Duration = 0;
+volatile unsigned int HighToneTime = 250;
+volatile unsigned int LowToneTime = 10;
+
+volatile unsigned int delta = 0;
 
 
-
+volatile char ToneFlag = 0;
 
 
 #pragma config CPD = OFF, BOREN = OFF, IESO = OFF, FOSC = INTOSC, FCMEN = OFF, MCLRE = ON, WDTE = OFF, CP = OFF, PWRTE = OFF, CLKOUTEN = OFF, LVP = OFF
@@ -40,6 +47,10 @@ void SetPWMDutyCyle(unsigned int duty_cycle_value)
 
 unsigned int  step;
 void main(void) {
+    Duration = 0;
+    ToneFlag = 0;
+
+    delta =(unsigned int) (LowToneTime / (255 -124));
 
     // set high speed internal osc to 8 MHz and 4xPLL on => 32MHz clock speed
     OSCCON = 0b11110000;
@@ -111,7 +122,7 @@ void main(void) {
     
     step = 0;
     RA4 = 0;
-    SetPWMDutyCyle(255); // 50% duty ratio
+    SetPWMDutyCyle(16); // 50% duty ratio
     //volatile unsigned int i  = 0 ;
     while(1)
     {
@@ -125,6 +136,38 @@ void interrupt isr(void)
     {
         // half the frequency of PWM = 2 kHz
         RA4 = ~RA4;
+
+       
+
+        Duration++;
+        if (ToneFlag == 0)
+        {
+            if (Duration > HighToneTime)
+            {
+                Duration = 0;
+                //PR2 = 255;
+                ToneFlag = 1;
+            }
+        }
+        if (ToneFlag)
+        {
+            if( (Duration  % delta) == 0)
+            {
+                if (PR2 <= 255)
+                {
+                    PR2 = PR2 + 1;
+                }
+            }
+
+            if (Duration > LowToneTime)
+            {
+                RA4 = 0; // turn off the led
+               T2CONbits.TMR2ON=0;
+               PIE1bits.TMR2IE = 0;
+
+            }
+        }
+        
         PIR1bits.TMR2IF = 0;
     }
 //    TMR0 = 30; // sound sampling rate around 2.2kHz
